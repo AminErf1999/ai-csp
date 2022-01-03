@@ -1,9 +1,10 @@
-from typing import Dict, List
+from typing import List
 
 
 class Cell():
-    def __init__(self, position: list) -> None:
+    def __init__(self, position: list, order: int) -> None:
         self.position = position
+        self.order = order
         self.value = 0
         self.mutual_cell = None
         self.neighbors: List[Cell] = []

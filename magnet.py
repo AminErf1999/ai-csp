@@ -1,5 +1,5 @@
 from csp import CSP
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, OrderedDict
 from cell import Cell
 from constraints import OpposeMagnetConstraint, RemainingMagnetConstraint, SameAdjacentPoleConstraint
 
@@ -30,8 +30,9 @@ if __name__ == "__main__":
 
     for i in range(len(table)):
         for j in range(len(table[0])):
+            order = i*len(table) + j
             cell_value = int(table[i][j])
-            cell = Cell([i, j])
+            cell = Cell([i, j], order)
             cell.set_value(cell_value)
             variables.append(cell)
 
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     csp: CSP[Cell, str] = CSP(variables, domains)
 
     RemainingMagnetConstraint.remaining_magnet = remaining_magnet
+    RemainingMagnetConstraint.variables = variables
     csp.add_constraint(SameAdjacentPoleConstraint(variables))
     csp.add_constraint(OpposeMagnetConstraint(variables))
     csp.add_constraint(RemainingMagnetConstraint(variables))
@@ -96,15 +98,19 @@ if __name__ == "__main__":
     # print(f'pos: {RemainingMagnetConstraint.remaining_magnet["pos"]}')
     # print(f'neg: {RemainingMagnetConstraint.remaining_magnet["neg"]}')
 
-    solution: Optional[Dict[str, str]] = csp.backtracking_search()
+    solution: Optional[Dict[str, str]
+                       ] = csp.backtracking_search(domains=domains)
+
     if solution is None:
         print("No solution found!")
     else:
+        table = {finalCell: assignment for finalCell,
+                 assignment in sorted(solution.items(), key=lambda item: item[0].order)}
         index = 0
         solutions = []
-        for cell in solution:
+        for cell in table:
             index += 1
-            solutions.append(solution[cell])
+            solutions.append(table[cell])
             if (index % m == 0):
                 print(solutions)
                 solutions = []

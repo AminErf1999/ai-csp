@@ -18,6 +18,7 @@ class Constraint(Generic[V, D], ABC):
 
 class RemainingMagnetConstraint(Constraint[Cell, str]):  # 3
     remaining_magnet: Dict
+    variables: List[Cell]
 
     def __init__(self, cells: List[Cell]) -> None:
         super().__init__(cells)
@@ -38,23 +39,25 @@ class RemainingMagnetConstraint(Constraint[Cell, str]):  # 3
         elif (direction == 'col'):
             return RemainingMagnetConstraint.remaining_magnet['neg']['col'][position[1]]
 
-    def get_unassigned_cells_count(self, direction: str, position: List[int]) -> int:
+    def get_unassigned_cells_count(self, direction: str, unassignedCells, position: List[int]) -> int:
         if (direction == 'row'):
-            return len(
-                RemainingMagnetConstraint.remaining_magnet['pos']['row']) - position[1] - 1
+            cells = [v for v in unassignedCells if v.position[0] == position[0]]
+            return len(cells)
         elif(direction == 'col'):
-            return len(
-                RemainingMagnetConstraint.remaining_magnet['pos']['col']) - position[0] - 1
+            cells = [v for v in unassignedCells if v.position[1] == position[1]]
+            return len(cells)
 
     def satisfied(self, cell: Cell, assignment: Dict[Cell, int]) -> bool:
         cellPos = cell.position
+        unassigned: List[V] = [
+            v for v in RemainingMagnetConstraint.variables if v not in assignment]
 
         if (assignment[cell] == '+'):
             if (not self.has_remaining_magnet('pos', cellPos)):
                 # print('-- no remaining positive magnet --')
                 return False
-            elif (self.get_remaining_pos_magnet_count('row', cellPos) - 1 > self.get_unassigned_cells_count('row', cellPos)
-                    or self.get_remaining_pos_magnet_count('col', cellPos) - 1 > self.get_unassigned_cells_count('col', cellPos)):
+            elif (self.get_remaining_pos_magnet_count('row', cellPos) - 1 > self.get_unassigned_cells_count('row', unassigned, cellPos)
+                    or self.get_remaining_pos_magnet_count('col', cellPos) - 1 > self.get_unassigned_cells_count('col', unassigned, cellPos)):
                 # print('-- more positive magnet than remaining cells --')
                 return False
             RemainingMagnetConstraint.remaining_magnet["pos"]["row"][cellPos[0]] -= 1
@@ -64,18 +67,18 @@ class RemainingMagnetConstraint(Constraint[Cell, str]):  # 3
             if (not self.has_remaining_magnet('neg', cellPos)):
                 # print('-- no remaining negative magnet --')
                 return False
-            elif (self.get_remaining_neg_magnet_count('row', cellPos) - 1 > self.get_unassigned_cells_count('row', cellPos)
-                    or self.get_remaining_neg_magnet_count('col', cellPos) - 1 > self.get_unassigned_cells_count('col', cellPos)):
+            elif (self.get_remaining_neg_magnet_count('row', cellPos) - 1 > self.get_unassigned_cells_count('row', unassigned, cellPos)
+                    or self.get_remaining_neg_magnet_count('col', cellPos) - 1 > self.get_unassigned_cells_count('col', unassigned, cellPos)):
                 # print('-- more negative magnet than remaining cells --')
                 return False
             RemainingMagnetConstraint.remaining_magnet["neg"]["row"][cellPos[0]] -= 1
             RemainingMagnetConstraint.remaining_magnet["neg"]["col"][cellPos[1]] -= 1
 
         elif (assignment[cell] == '0'):
-            if(self.get_remaining_pos_magnet_count('row', cellPos) > self.get_unassigned_cells_count('row', cellPos)
-                    or self.get_remaining_pos_magnet_count('col', cellPos) > self.get_unassigned_cells_count('col', cellPos)
-                    or self.get_remaining_neg_magnet_count('row', cellPos) > self.get_unassigned_cells_count('row', cellPos)
-                    or self.get_remaining_neg_magnet_count('col', cellPos) > self.get_unassigned_cells_count('col', cellPos)):
+            if(self.get_remaining_pos_magnet_count('row', cellPos) > self.get_unassigned_cells_count('row', unassigned, cellPos)
+                    or self.get_remaining_pos_magnet_count('col', cellPos) > self.get_unassigned_cells_count('col', unassigned, cellPos)
+                    or self.get_remaining_neg_magnet_count('row', cellPos) > self.get_unassigned_cells_count('row', unassigned, cellPos)
+                    or self.get_remaining_neg_magnet_count('col', cellPos) > self.get_unassigned_cells_count('col', unassigned, cellPos)):
                 # print('-- more positive and negative magnet than remaining cells --')
                 return False
 
