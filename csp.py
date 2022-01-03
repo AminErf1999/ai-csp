@@ -78,6 +78,8 @@ class CSP(Generic[V, D]):
             domains[variable]))  # MRV heuristic
         first: V = unassigned[0]
         # domains order should be changed here
+        if (len(domains[first]) == 0):
+            print('this should have been found sooner!!!!')
         for value in domains[first]:
 
             local_domains = dict()
