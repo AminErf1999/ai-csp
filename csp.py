@@ -31,6 +31,17 @@ class CSP(Generic[V, D]):
                 return False
         return True
 
+    def forward_check(self, cell: V):
+        pass
+
+    def retrieveMagnet(self, assigned_value, cell: V) -> None:
+        if assigned_value == '+':
+            RemainingMagnetConstraint.remaining_magnet["pos"]["row"][cell.position[0]] += 1
+            RemainingMagnetConstraint.remaining_magnet["pos"]["col"][cell.position[1]] += 1
+        elif assigned_value == '-':
+            RemainingMagnetConstraint.remaining_magnet["neg"]["row"][cell.position[0]] += 1
+            RemainingMagnetConstraint.remaining_magnet["neg"]["col"][cell.position[1]] += 1
+
     def backtracking_search(self, assignment: Dict[V, D] = {}) -> Optional[Dict[V, D]]:
         if len(assignment) == len(self.variables):
             return assignment
@@ -39,6 +50,7 @@ class CSP(Generic[V, D]):
             v for v in self.variables if v not in assignment]
 
         # heuristic for choosing variable will go here...
+        unassigned.sort(key=lambda variable: len(self.domains[variable]))
         first: V = unassigned[0]
         # heuristic for choosing domain will go here..
         for value in self.domains[first]:
@@ -46,6 +58,9 @@ class CSP(Generic[V, D]):
             local_assignment[first] = value
 
             if self.consistent(first, local_assignment):
+                # if (not self.forward_check(first)):
+                #     self.retrieveMagnet(value, first)
+                #     continue
                 result: Optional[Dict[V, D]] = self.backtracking_search(
                     local_assignment)
                 # if we didn't find the result, we will end up backtracking
@@ -53,11 +68,6 @@ class CSP(Generic[V, D]):
                     return result
 
                 if result is None:
-                    if local_assignment[first] == '+':
-                        RemainingMagnetConstraint.remaining_magnet["pos"]["row"][first.position[0]] += 1
-                        RemainingMagnetConstraint.remaining_magnet["pos"]["col"][first.position[1]] += 1
-                    elif local_assignment[first] == '-':
-                        RemainingMagnetConstraint.remaining_magnet["neg"]["row"][first.position[0]] += 1
-                        RemainingMagnetConstraint.remaining_magnet["neg"]["col"][first.position[1]] += 1
+                    self.retrieveMagnet(value, first)
 
         return None
