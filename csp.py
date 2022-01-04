@@ -1,7 +1,7 @@
+from cell import Cell
 from constraints import RemainingMagnetConstraint
 from typing import Generic, TypeVar, Dict, List, Optional
 from constraints import Constraint
-from copy import deepcopy
 
 
 V = TypeVar('V')
@@ -62,7 +62,7 @@ class CSP(Generic[V, D]):
 
         for neighbor in neighbor_cells:
             if (len(domains[neighbor]) == 0):
-                print('forward chaining found a wrong assignment sooner!')
+                # print('forward chaining found a wrong assignment sooner!')
                 return False
 
         return True
@@ -75,6 +75,16 @@ class CSP(Generic[V, D]):
             RemainingMagnetConstraint.remaining_magnet["neg"]["row"][cell.position[0]] += 1
             RemainingMagnetConstraint.remaining_magnet["neg"]["col"][cell.position[1]] += 1
 
+    def mrv_heuristic(self, unassigned, domains) -> Cell:
+        minimum_remaining_value = unassigned[0]
+        for variable in unassigned:
+            if (len(domains[minimum_remaining_value]) == 1):
+                return minimum_remaining_value
+            if (len(domains[variable]) < len(domains[minimum_remaining_value])):
+                minimum_remaining_value = variable
+
+        return minimum_remaining_value
+
     def backtracking_search(self, assignment: Dict[V, D] = {}, domains: Dict[V, List[D]] = {}) -> Optional[Dict[V, D]]:
         if len(assignment) == len(self.variables):
             return assignment
@@ -82,9 +92,8 @@ class CSP(Generic[V, D]):
         unassigned: List[V] = [
             v for v in self.variables if v not in assignment]
 
-        unassigned.sort(key=lambda variable: len(
-            domains[variable]))  # MRV heuristic
-        first: V = unassigned[0]
+        first: V = self.mrv_heuristic(unassigned, domains)  # MRV heuristic
+        # first: V = unassigned[0]  # normal backtrack
 
         # domains order should be changed here for  LCV heuristic
         for value in domains[first]:
@@ -95,6 +104,10 @@ class CSP(Generic[V, D]):
 
             local_assignment = assignment.copy()  # creates a brand new object
             local_assignment[first] = value
+
+            # print(
+            #     f'for cell: {first.position},with domain: {local_domains[first]}, value: {local_assignment[first]}')
+
             if self.consistent(first, local_assignment):
                 if (not self.forward_check(local_assignment, first, local_domains)):
                     self.retrieveMagnet(local_assignment[first], first)
