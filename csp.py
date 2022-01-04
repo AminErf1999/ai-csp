@@ -36,6 +36,9 @@ class CSP(Generic[V, D]):
         mutual_cell = cell.mutual_cell
         neighbor_cells = cell.neighbors
 
+        unassignedVairables = [
+            v for v in self.variables if v not in assignment]
+
         if (assignment[cell] == '+'):
             for neighbor in neighbor_cells:
                 if ('+' in domains[neighbor]):
@@ -57,6 +60,11 @@ class CSP(Generic[V, D]):
             if ('-' in domains[mutual_cell]):
                 domains[mutual_cell].remove('-')
 
+        for neighbor in neighbor_cells:
+            if (len(domains[neighbor]) == 0):
+                print('forward chaining found a wrong assignment sooner!')
+                return False
+
         return True
 
     def retrieveMagnet(self, assigned_value, cell: V) -> None:
@@ -77,9 +85,8 @@ class CSP(Generic[V, D]):
         unassigned.sort(key=lambda variable: len(
             domains[variable]))  # MRV heuristic
         first: V = unassigned[0]
-        # domains order should be changed here
-        if (len(domains[first]) == 0):
-            print('this should have been found sooner!!!!')
+
+        # domains order should be changed here for  LCV heuristic
         for value in domains[first]:
 
             local_domains = dict()
